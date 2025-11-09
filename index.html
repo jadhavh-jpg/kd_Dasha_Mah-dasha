@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>KASTURI DIVINE — Vimshottari Dasha Viewer (Mahadasha → Antar → Pratyantar → Sookshma → Prana)</title>
+<style>
+  :root{
+    --accent:#d46a2a;
+    --bg:#fff8f0;
+    --card:#ffffff;
+    --muted:#666;
+    --maxw:980px;
+    --accent-dark:#b35220;
+    --purple:#7a3ff2;
+    --deep:#4b1b8c;
+  }
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Poppins', Roboto, Arial;background:var(--bg);color:#1a1333;}
+  .wrap{max-width:var(--maxw);margin:18px auto;padding:16px;}
+  header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  .logo{width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,var(--purple),#c47aff);display:flex;align-items:center;justify-content:center;color:white;font-weight:800}
+  h1{margin:0;font-size:20px;color:var(--deep)}
+  p.lead{margin:6px 0 0;color:var(--muted)}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 8px 24px rgba(60,20,100,0.06)}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .col{flex:1;min-width:160px}
+  label{display:block;font-size:13px;margin-bottom:6px;color:#3a2b64}
+  input[type=text], input[type=date], input[type=time], input[type=number], select, textarea{
+    width:100%;padding:8px;border-radius:8px;border:1px solid #efe6ff;box-sizing:border-box;font-size:14px
+  }
+  button{background:var(--accent);border:0;color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:8px;border-bottom:1px solid #f3e8e0;text-align:left;font-size:13px}
+  .timeline{display:flex;gap:8px;margin-top:12px;overflow:auto;padding-bottom:8px}
+  .bar{height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;padding:6px 10px;white-space:nowrap;font-weight:700}
+  footer{margin-top:18px;padding:14px;border-radius:10px;background:linear-gradient(90deg,#fff6f0,#fff8f0);text-align:center;color:var(--deep);font-weight:600}
+  a.link{color:var(--accent-dark);text-decoration:none;font-weight:700}
+  .small{font-size:13px;padding:6px 8px;border-radius:8px}
+  .pill{display:inline-block;padding:6px 8px;border-radius:8px;background:#fff0e8;color:var(--accent-dark);font-weight:700;margin-right:8px}
+  .hint{font-size:13px;color:#7a5b52}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  @media (max-width:720px){
+    .row{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">KD</div>
+      <div>
+        <h1>KASTURI DIVINE</h1>
+        <p class="lead">Vimshottari Dasha — Mahādasha → Antar → Pratyantar → Sookshma → Prana</p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="flex-between">
+        <div>
+          <label>Person Name</label>
+          <input id="personName" type="text" placeholder="उदा. Ram Kumar" />
+        </div>
+        <div style="min-width:220px">
+          <label>Desired depth</label>
+          <select id="depth" class="small">
+            <option value="1">Mahādasha + Antar</option>
+            <option value="2" selected>Antar → Pratyantar</option>
+            <option value="3">Pratyantar → Sookshma</option>
+            <option value="4">Sookshma → Prana</option>
+          </select>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #fde6dc" />
+
+      <div style="margin-bottom:8px"><strong>1) Birth details (for automatic nakshatra if you provide Moon longitude OR select nakshatra)</strong></div>
+      <div class="row">
+        <div class="col">
+          <label>Date of Birth</label>
+          <input id="dob" type="date" />
+        </div>
+        <div style="min-width:130px">
+          <label>Time (local)</label>
+          <input id="tob" type="time" />
+        </div>
+        <div class="col">
+          <label>Place (latitude, longitude)</label>
+          <input id="place" type="text" placeholder="उदा. 18.5204,73.8567 — या खाली छोड़ें" />
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <label>Optional: Provide Moon longitude (deg.decimal) OR choose Nakshatra</label>
+        <div class="row">
+          <div class="col">
+            <input id="moonLon" type="text" placeholder="Moon longitude in degrees (e.g. 125.435)" />
+            <div class="muted hint">Agar aapke paas moon longitude ho to daalein — warna neeche nakshatra select karein.</div>
+          </div>
+          <div style="min-width:220px">
+            <select id="nakshatraSelect">
+              <option value="">— Select Nakshatra (if known) —</option>
+            </select>
+            <div class="muted hint">Nakshatra select karne se starting mahadasha mil jayegi.</div>
+          </div>
+        </div>
+      </div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #fde6dc" />
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <button id="calcBtn">Calculate Vimshottari</button>
+        <button id="exportCsv" style="background:#4b1b8c">Export CSV</button>
+        <div class="pill" id="resultPeriod">—</div>
+      </div>
+
+      <div id="explain" style="margin-top:10px" class="muted">
+        Algorithm: Vimshottari mahādasha order is fixed (Ketu → Venus → Sun → Moon → Mars → Rahu → Jupiter → Saturn → Mercury).
+        Starting mahādasha is the **lord of Moon's nakshatra** at birth. If Moon longitude is given, app computes nakshatra automatically.
+        Antar/Pratyantar durations are proportional to the standard 9-planet vimshottari ratios (out of 120 years).
+      </div>
+    </div>
+
+    <!-- output -->
+    <div class="card" id="outputCard" style="display:none">
+      <div class="flex-between">
+        <h2 style="margin:0">Dasha Timeline — <span id="outName"></span></h2>
+        <div class="muted" id="spanSummary"></div>
+      </div>
+
+      <div id="tableWrap"></div>
+      <div class="timeline" id="timelineWrap" aria-hidden="false"></div>
+    </div>
+
+    <footer>
+      © Dr. Santoshh Jakhar & Mrs. Neetu Choudhary — <strong>KASTURI DIVINE</strong><br/>
+      WhatsApp: <a class="link" href="tel:+919354370946">+91 9354370946</a> &nbsp; • &nbsp;
+      Group: <a class="link" href="https://chat.whatsapp.com/JyjgJl72hxcDaTGvMe0Ax1" target="_blank" rel="noopener">Join WhatsApp Group</a>
+    </footer>
+  </div>
+
+<script>
+// ----------------- Vimshottari constants -----------------
+const PLANETS = [
+  {name:'Ketu', years:7},
+  {name:'Venus', years:20},
+  {name:'Sun', years:6},
+  {name:'Moon', years:10},
+  {name:'Mars', years:7},
+  {name:'Rahu', years:18},
+  {name:'Jupiter', years:16},
+  {name:'Saturn', years:19},
+  {name:'Mercury', years:17}
+];
+// mapping of 27 nakshatras to lord (sequence repeats Ketu,Venus,Sun,Moon,Mars,Rahu,Jupiter,Saturn,Mercury)
+const NAKSHATRA_LORDS = [
+ 'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
+ 'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury',
+ 'Ketu','Venus','Sun','Moon','Mars','Rahu','Jupiter','Saturn','Mercury'
+];
+const NAKSHATRA_NAMES = [
+ 'Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra','Punarvasu','Pushya','Ashlesha',
+ 'Magha','Purva Phalguni','Uttara Phalguni','Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha',
+ 'Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishta','Shatabhisha','Purva Bhadrapada','Uttara Bhadrapada','Revati'
+];
+
+(function init(){
+  // populate nakshatra select
+  const sel = document.getElementById('nakshatraSelect');
+  NAKSHATRA_NAMES.forEach((n,i)=> {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `${n} — lord: ${NAKSHATRA_LORDS[i]}`;
+    sel.appendChild(o);
+  });
+})();
+
+// ---------- Utility date helpers ----------
+function addYears(date, years){
+  const d = new Date(date.getTime());
+  d.setFullYear(d.getFullYear() + Math.floor(years));
+  // add fractional part in days
+  const frac = years - Math.floor(years);
+  if(frac > 0){
+    const days = Math.round(frac * 365.2425);
+    d.setDate(d.getDate() + days);
+  }
+  return d;
+}
+function addDays(date, days){
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + Math.round(days));
+  return d;
+}
+function formatDate(d){
+  if(!d) return '—';
+  return d.toLocaleString();
+}
+
+// ---------- Core Vimshottari logic ----------
+// Input: moonLongitude in degrees (0-360) OR nakIndex (0-26)
+// Steps:
+// 1. Determine nakIndex and nakLord.
+// 2. fractionIntoNak = (moonLon % 13.3333333) / 13.3333333
+// 3. startingMahadasha = nakLord
+// 4. remainingYearsInStartingMaha = mahaYears * (1 - fraction)
+// 5. Build subsequent mahadashas in cycle until 120 years accounted
+// 6. For each mahadasha, compute antardashas: each antarYears = mahaYears * (planetYears/120)
+// 7. For deeper levels (pratyantar, sookshma, prana), apply same proportional subdivision recursively
+
+function planetIndexByName(name){
+  return PLANETS.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+}
+function nakIndexFromMoonLon(lon){
+  // normalize
+  const v = ((lon % 360) + 360) % 360;
+  const nakSize = 360/27; // 13.333333...
+  return Math.floor(v / nakSize);
+}
+function nakLordFromNakIndex(idx){
+  return NAKSHATRA_LORDS[idx];
+}
+function buildMahadashaSequence(startPlanetName, startRemainingYears){
+  // returns array of {planetName, years, startDate (relative), endDate (relative)}
+  // We'll build relative durations (in years), actual startDate will be applied later.
+  const res = [];
+  // index in PLANETS sequence of start planet
+  let startIdx = planetIndexByName(startPlanetName);
+  if(startIdx === -1) startIdx = 0;
+  // total to fill 120 years
+  let remain = startRemainingYears;
+  // push starting maha
+  res.push({planet: PLANETS[startIdx].name, years: parseFloat((remain).toFixed(8))});
+  let idx = (startIdx + 1) % PLANETS.length;
+  // push subsequent until sum >= 120
+  while(res.reduce((s,r)=>s + r.years, 0) < 120 - 1e-8){
+    const y = PLANETS[idx].years;
+    res.push({planet: PLANETS[idx].name, years: y});
+    idx = (idx + 1) % PLANETS.length;
+  }
+  // adjust last to not exceed 120 exactly (floating rounding)
+  const total = res.reduce((s,r)=>s + r.years,0);
+  if(Math.abs(total - 120) > 1e-6){
+    const diff = 120 - total;
+    res[res.length -1].years = parseFloat((res[res.length -1].years + diff).toFixed(8));
+  }
+  return res;
+}
+
+function subdivide(mahaYears, depth){
+  // returns nested structure of subdivisions up to depth levels
+  // depth=1 => Antar only; depth=2 => Antar -> Pratyantar; etc.
+  // Use proportions = PLANETS[].years / 120
+  const nodes = [];
+  for(const p of PLANETS){
+    const years = mahaYears * (p.years / 120);
+    const node = {planet: p.name, years: parseFloat(years.toFixed(8))};
+    if(depth > 1){
+      node.children = subdivide(node.years, depth - 1);
+    }
+    nodes.push(node);
+  }
+  return nodes;
+}
+
+// given a starting JS Date, produce absolute start/end dates for nested data
+function materializeTimeline(startDate, mahadashas, depth){
+  const rows = []; // each row {level,name,planet,start,end,years}
+  let cursor = new Date(startDate.getTime());
+  for(const m of mahadashas){
+    const mStart = new Date(cursor.getTime());
+    const mEnd = addDays(mStart, Math.round(m.years * 365.2425));
+    rows.push({level:'Mahadasha',planet:m.planet,name:m.planet,start:mStart,end:mEnd,years:m.years});
+    // subdivide for antar
+    const antars = subdivide(m.years, depth);
+    let antarCursor = new Date(mStart.getTime());
+    for(const a of antars){
+      const aStart = new Date(antarCursor.getTime());
+      const aEnd = addDays(aStart, Math.round(a.years * 365.2425));
+      rows.push({level:'Antar',planet:m.planet,name:a.planet,start:aStart,end:aEnd,years:a.years});
+      // pratyantar etc from a.children
+      if(a.children && a.children.length){
+        let pCursor = new Date(aStart.getTime());
+        for(const p of a.children){
+          const pStart = new Date(pCursor.getTime());
+          const pEnd = addDays(pStart, Math.round(p.years * 365.2425));
+          rows.push({level:'Pratyantar',planet:a.planet,name:p.planet,start:pStart,end:pEnd,years:p.years});
+          // deeper levels would be added similarly if depth>2 (but we've flattened only up to pratyantar here)
+          pCursor = pEnd;
+        }
+      }
+      antarCursor = aEnd;
+    }
+    cursor = mEnd;
+  }
+  return rows;
+}
+
+// ---------- UI wiring ----------
+document.getElementById('calcBtn').addEventListener('click', ()=> {
+  try{
+    const person = document.getElementById('personName').value || '—';
+    const depth = Number(document.getElementById('depth').value) + 0; // 1..4
+    const dob = document.getElementById('dob').value;
+    const tob = document.getElementById('tob').value;
+    const moonLonStr = document.getElementById('moonLon').value.trim();
+    const nakSelected = document.getElementById('nakshatraSelect').value;
+    // determine nakshatra lord and fraction
+    let nakIndex = null;
+    let fraction = 0;
+    let startPlanet = null;
+    if(moonLonStr){
+      const moonLon = parseFloat(moonLonStr);
+      if(isNaN(moonLon) || moonLon < 0 || moonLon >= 360) { alert('Moon longitude must be between 0 and <360'); return; }
+      nakIndex = nakIndexFromMoonLon(moonLon);
+      const nakSize = 360/27;
+      const base = (moonLon % nakSize);
+      fraction = base / nakSize;
+      startPlanet = nakLordFromNakIndex(nakIndex);
+    } else if(nakSelected !== ''){
+      nakIndex = Number(nakSelected);
+      fraction = 0; // assume start at beginning of nakshatra unless user provides moon position
+      startPlanet = nakLordFromNakIndex(nakIndex);
+    } else {
+      alert('Kripya Moon longitude ya Nakshatra select karein (optional: DOB+time+place help fetch moon lon externally).'); return;
+    }
+
+    // compute remaining years in starting mahadasha
+    const startIdx = planetIndexByName(startPlanet);
+    if(startIdx === -1) { alert('Unknown starting planet'); return; }
+    const mahaFullYears = PLANETS[startIdx].years;
+    const remainingYears = parseFloat((mahaFullYears * (1 - fraction)).toFixed(8));
+    // build mahadasha sequence
+    const mahas = buildMahadashaSequence(startPlanet, remainingYears);
+    // set startDate: use dob+tob if present else today
+    let startDate;
+    if(dob){
+      if(tob){
+        startDate = new Date(dob + 'T' + tob);
+      } else {
+        startDate = new Date(dob + 'T00:00:00');
+      }
+    } else {
+      startDate = new Date();
+    }
+    // materialize timeline with chosen depth (we'll use depth to generate subdivisions)
+    const rows = materializeTimeline(startDate, mahas, depth);
+    // render output
+    renderOutput(person, rows, mahas, startDate);
+  } catch(err){
+    console.error(err);
+    alert('Calculation failed: ' + err.message);
+  }
+});
+
+function renderOutput(person, rows, mahas, startDate){
+  document.getElementById('outputCard').style.display = 'block';
+  document.getElementById('outName').textContent = person;
+  // summary
+  const spanSummary = document.getElementById('spanSummary');
+  const first = rows[0];
+  const last = rows[rows.length -1];
+  spanSummary.textContent = `From ${formatDate(first.start)} → ${formatDate(last.end)}`;
+
+  // table
+  const tableWrap = document.getElementById('tableWrap');
+  tableWrap.innerHTML = '';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Level</th><th>Mahadasha</th><th>Planet</th><th>Start</th><th>End</th><th>Years</th></tr>';
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  // Only show up to depth levels (levels in rows contain Mahadasha/Antar/Pratyantar)
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.level}</td><td>${r.planet}</td><td>${r.name}</td><td>${formatDate(r.start)}</td><td>${formatDate(r.end)}</td><td>${(r.years||0).toFixed(4)}</td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  tableWrap.appendChild(table);
+
+  // timeline (show only Mahadasha bars for visual clarity)
+  const timeline = document.getElementById('timelineWrap');
+  timeline.innerHTML = '';
+  // compute total days covered by mahas for width proportions
+  const totalDays = mahas.reduce((s,m)=> s + m.years * 365.2425, 0);
+  let cursor = new Date(startDate.getTime());
+  for(const m of mahas){
+    const days = m.years * 365.2425;
+    const w = Math.max(60, Math.round((days / totalDays) * 1000));
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.width = w + 'px';
+    bar.style.background = stringToColor(m.planet);
+    const s = new Date(cursor.getTime());
+    const e = addDays(s, days);
+    bar.title = `${m.planet}: ${m.years.toFixed(4)} yrs — ${s.toDateString()} → ${e.toDateString()}`;
+    bar.textContent = `${m.planet} (${m.years.toFixed(2)}y)`;
+    timeline.appendChild(bar);
+    cursor = e;
+  }
+
+  // store last computed data on window for CSV export
+  window.__kasturi_last = {person, rows, mahadashas:mahas, startDate};
+}
+
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  const data = window.__kasturi_last;
+  if(!data){ alert('Please calculate first'); return; }
+  // build CSV from rows
+  let csv = 'Person,Level,Mahadasha,Planet,Start,End,Years\n';
+  data.rows.forEach(r => {
+    csv += `${data.person},${r.level},${r.planet},${r.name},"${r.start.toISOString()}","${r.end.toISOString()}",${(r.years||0)}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (data.person || 'dasha') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// small color utility
+function stringToColor(str){
+  let hash = 0;
+  for(let i=0;i<str.length;i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
+  const r = (hash >> 16) & 0xFF;
+  const g = (hash >> 8) & 0xFF;
+  const b = hash & 0xFF;
+  // blend towards accent for nicer palette
+  const ar = 0xD4; const ag = 0x6A; const ab = 0x2A;
+  const mix = (x,y,alpha)=> Math.round(x*(1-alpha)+y*alpha);
+  const alpha = 0.15;
+  const rr = mix(r, ar, alpha), gg = mix(g, ag, alpha), bb = mix(b, ab, alpha);
+  return `rgb(${rr},${gg},${bb})`;
+}
+
+// optional: let user quickly fill lat/lon via geolocation (not used for moon lon calc here)
+</script>
+</body>
+</html>
