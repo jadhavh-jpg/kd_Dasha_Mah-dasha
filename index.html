@@ -420,7 +420,8 @@ document.getElementById('autoNak').addEventListener('click', async ()=>{
   const status = document.getElementById('status');
   status.textContent = 'Calculating moon longitude…';
   try{
-    const resp = await fetch('http://localhost:3000/api/moonlon', {
+    const resp = await fetch('/api/moonlon',
+, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ dob, tob, tzOffsetMinutes: tzOffset })
@@ -446,4 +447,5 @@ document.getElementById('autoNak').addEventListener('click', async ()=>{
 </script>
 </body>
 </html>
+
 
