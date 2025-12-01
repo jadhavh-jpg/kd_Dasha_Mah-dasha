@@ -40,6 +40,7 @@
   .pill{display:inline-block;padding:6px 8px;border-radius:8px;background:#fff0e8;color:var(--accent-dark);font-weight:700;margin-right:8px}
   .hint{font-size:13px;color:#7a5b52}
   .flex-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .status{font-size:13px;color:#374151;margin-top:8px}
   @media (max-width:720px){
     .row{flex-direction:column}
   }
@@ -49,7 +50,6 @@
   <div class="wrap">
     <header>
       <div class="logo" aria-label="Kasturi Divine logo">KD</div>
-
       <div>
         <h1>KASTURI DIVINE</h1>
         <p class="lead">Vimshottari Dasha — Mahādasha → Antar → Pratyantar → Sookshma → Prana</p>
@@ -116,7 +116,7 @@
         <div class="pill" id="resultPeriod">—</div>
       </div>
 
-      <div id="status" style="margin-top:8px;color:#6b7280"></div>
+      <div id="status" class="status"> </div>
 
       <div id="explain" style="margin-top:10px" class="muted">
         Algorithm: Vimshottari mahādasha order is fixed (Ketu → Venus → Sun → Moon → Mars → Rahu → Jupiter → Saturn → Mercury).
@@ -227,8 +227,7 @@ function buildMahadashaSequence(startPlanetName, startRemainingYears){
   const res = [];
   let startIdx = planetIndexByName(startPlanetName);
   if(startIdx === -1) startIdx = 0;
-  let remain = startRemainingYears;
-  res.push({planet: PLANETS[startIdx].name, years: parseFloat((remain).toFixed(8))});
+  res.push({planet: PLANETS[startIdx].name, years: parseFloat((startRemainingYears).toFixed(8))});
   let idx = (startIdx + 1) % PLANETS.length;
   while(res.reduce((s,r)=>s + r.years, 0) < 120 - 1e-8){
     const y = PLANETS[idx].years;
@@ -264,7 +263,6 @@ function materializeTimeline(startDate, mahadashas, depth){
     for(const n of nodeList){
       const s = new Date(c.getTime());
       const e = addDays(s, n.years * 365.2425);
-      // show parent mahadasha name for clarity when level != Mahadasha
       rows.push({level: levelName, planet: n._parentMahadasha || n.planet || '—', name: n.planet || n.name, start: s, end: e, years: n.years});
       if(n.children && n.children.length){
         const nextLevel = (levelName === 'Mahadasha') ? 'Antar' :
@@ -292,7 +290,8 @@ function materializeTimeline(startDate, mahadashas, depth){
 }
 
 // ---------- UI wiring ----------
-// Robust Calculate handler (paste replacing old calcBtn listener)
+
+// Robust Calculate handler (replacement)
 document.getElementById('calcBtn').addEventListener('click', async ()=> {
   const status = document.getElementById('status');
   try {
@@ -364,8 +363,9 @@ document.getElementById('calcBtn').addEventListener('click', async ()=> {
     }
 
     const startIdx = planetIndexByName(startPlanet);
+    if(startIdx === -1) { alert('Unknown starting planet'); status.textContent=''; return; }
     const mahaFullYears = PLANETS[startIdx].years;
-    const remainingYears = mahaFullYears * (1 - fraction);
+    const remainingYears = parseFloat((mahaFullYears * (1 - fraction)).toFixed(8));
     const mahas = buildMahadashaSequence(startPlanet, remainingYears);
 
     const startDate = makeLocalDateFromInputs(dob, tob);
@@ -374,51 +374,8 @@ document.getElementById('calcBtn').addEventListener('click', async ()=> {
     status.textContent = 'Calculation complete.';
   } catch(err){
     console.error(err);
-    alert('Calculation failed: ' + err.message);
+    alert('Calculation failed: ' + (err && err.message ? err.message : String(err)));
     status.textContent = '';
-  }
-});
-, ()=> {
-  try{
-    const person = document.getElementById('personName').value || '—';
-    // depth value 1..4 corresponds to levels (Antar only -> up to Prana)
-    const depth = Number(document.getElementById('depth').value) || 2;
-    const dob = document.getElementById('dob').value;
-    const tob = document.getElementById('tob').value;
-    const moonLonStr = document.getElementById('moonLon').value.trim();
-    const nakSelected = document.getElementById('nakshatraSelect').value;
-
-    let nakIndex = null;
-    let fraction = 0;
-    let startPlanet = null;
-    if(moonLonStr){
-      const moonLon = parseFloat(moonLonStr);
-      if(isNaN(moonLon) || moonLon < 0 || moonLon >= 360) { alert('Moon longitude must be between 0 and <360'); return; }
-      nakIndex = nakIndexFromMoonLon(moonLon);
-      const nakSize = 360/27;
-      const base = (moonLon % nakSize);
-      fraction = base / nakSize;
-      startPlanet = nakLordFromNakIndex(nakIndex);
-    } else if(nakSelected !== ''){
-      nakIndex = Number(nakSelected);
-      fraction = 0; // assume start at beginning of nakshatra
-      startPlanet = nakLordFromNakIndex(nakIndex);
-    } else {
-      alert('Kripya Moon longitude ya Nakshatra select karein (optional: DOB+time+place help fetch moon lon externally).'); return;
-    }
-
-    const startIdx = planetIndexByName(startPlanet);
-    if(startIdx === -1) { alert('Unknown starting planet'); return; }
-    const mahaFullYears = PLANETS[startIdx].years;
-    const remainingYears = parseFloat((mahaFullYears * (1 - fraction)).toFixed(8));
-    const mahas = buildMahadashaSequence(startPlanet, remainingYears);
-
-    let startDate = makeLocalDateFromInputs(dob, tob);
-    const rows = materializeTimeline(startDate, mahas, depth);
-    renderOutput(person, rows, mahas, startDate);
-  } catch(err){
-    console.error(err);
-    alert('Calculation failed: ' + err.message);
   }
 });
 
@@ -497,7 +454,7 @@ function stringToColor(str){
   return `rgb(${rr},${gg},${bb})`;
 }
 
-// Auto Nakshatra button -> calls server API
+// Auto Nakshatra button -> calls serverless API at same origin (/api/moonlon)
 document.getElementById('autoNak').addEventListener('click', async ()=>{
   const dob = document.getElementById('dob').value;
   const tob = document.getElementById('tob').value || '00:00';
@@ -506,12 +463,15 @@ document.getElementById('autoNak').addEventListener('click', async ()=>{
   const status = document.getElementById('status');
   status.textContent = 'Calculating moon longitude…';
   try{
-    const resp = await fetch('/api/moonlon',
-, {
+    const resp = await fetch('/api/moonlon', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ dob, tob, tzOffsetMinutes: tzOffset })
     });
+    if(!resp.ok){
+      const txt = await resp.text().catch(()=>null);
+      throw new Error(`Server returned ${resp.status} ${txt || resp.statusText}`);
+    }
     const j = await resp.json();
     if(!j || typeof j.moonLongitude !== 'number'){
       status.textContent = 'Moon longitude fetch failed';
@@ -521,18 +481,13 @@ document.getElementById('autoNak').addEventListener('click', async ()=>{
     document.getElementById('moonLon').value = j.moonLongitude.toFixed(6);
     const nakIdx = nakIndexFromMoonLon(j.moonLongitude);
     document.getElementById('nakshatraSelect').value = String(nakIdx);
-    status.textContent = `Nakshatra auto-selected: ${NAKSHATRA_NAMES[nakIdx]}`;
-    // optionally auto-run calculation:
-    // document.getElementById('calcBtn').click();
+    status.textContent = `Nakshatra auto-selected: ${NAKSHATRA_NAMES[nakIdx]} (Moon lon ${j.moonLongitude.toFixed(6)}°)`;
   } catch(err){
     console.error(err);
     status.textContent = 'Auto fetch failed';
-    alert('Auto fetch failed: ' + err.message);
+    alert('Auto fetch failed: ' + (err.message || String(err)));
   }
 });
 </script>
 </body>
 </html>
-
-
-
