@@ -292,7 +292,93 @@ function materializeTimeline(startDate, mahadashas, depth){
 }
 
 // ---------- UI wiring ----------
-document.getElementById('calcBtn').addEventListener('click', ()=> {
+// Robust Calculate handler (paste replacing old calcBtn listener)
+document.getElementById('calcBtn').addEventListener('click', async ()=> {
+  const status = document.getElementById('status');
+  try {
+    status.textContent = 'Preparing calculation…';
+    const person = document.getElementById('personName').value || '—';
+    const depth = Number(document.getElementById('depth').value) || 2;
+    const dob = document.getElementById('dob').value;
+    const tob = document.getElementById('tob').value;
+    let moonLonStr = document.getElementById('moonLon').value.trim();
+    const nakSelected = document.getElementById('nakshatraSelect').value;
+
+    // If neither moonLon nor nakshatra provided → auto fetch
+    if(!moonLonStr && (!nakSelected || nakSelected === '')) {
+      if(!dob) {
+        alert('Kripya DOB daalein ya Nakshatra select karein.');
+        status.textContent = '';
+        return;
+      }
+      status.textContent = 'Auto-fetching Moon longitude…';
+      try {
+        const tzOffset = new Date().getTimezoneOffset();
+        const resp = await fetch('/api/moonlon', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ dob, tob: tob || '00:00', tzOffsetMinutes: tzOffset })
+        });
+        if(!resp.ok){
+          const txt = await resp.text().catch(()=>null);
+          throw new Error(`API ${resp.status} ${txt || resp.statusText}`);
+        }
+        const j = await resp.json();
+        if(!j || typeof j.moonLongitude !== 'number') throw new Error('Invalid server response');
+        moonLonStr = j.moonLongitude.toFixed(6);
+        document.getElementById('moonLon').value = moonLonStr;
+        const nakIdx = nakIndexFromMoonLon(j.moonLongitude);
+        document.getElementById('nakshatraSelect').value = String(nakIdx);
+        status.textContent = `Nakshatra auto-selected: ${NAKSHATRA_NAMES[nakIdx]}`;
+      } catch(apiErr){
+        console.error(apiErr);
+        alert('Auto fetch failed: ' + apiErr.message);
+        status.textContent = 'Auto fetch failed.';
+        return;
+      }
+    }
+
+    // normal calculation
+    let nakIndex = null;
+    let fraction = 0;
+    let startPlanet = null;
+    if(moonLonStr){
+      const moonLon = parseFloat(moonLonStr);
+      if(isNaN(moonLon) || moonLon < 0 || moonLon >= 360) {
+        alert('Moon longitude must be 0-360');
+        status.textContent='';
+        return;
+      }
+      nakIndex = nakIndexFromMoonLon(moonLon);
+      const nakSize = 360/27;
+      const base = (moonLon % nakSize);
+      fraction = base / nakSize;
+      startPlanet = nakLordFromNakIndex(nakIndex);
+    } else if(nakSelected !== ''){
+      nakIndex = Number(nakSelected);
+      startPlanet = nakLordFromNakIndex(nakIndex);
+    } else {
+      alert('Moon lon ya Nakshatra required.');
+      status.textContent = '';
+      return;
+    }
+
+    const startIdx = planetIndexByName(startPlanet);
+    const mahaFullYears = PLANETS[startIdx].years;
+    const remainingYears = mahaFullYears * (1 - fraction);
+    const mahas = buildMahadashaSequence(startPlanet, remainingYears);
+
+    const startDate = makeLocalDateFromInputs(dob, tob);
+    const rows = materializeTimeline(startDate, mahas, depth);
+    renderOutput(person, rows, mahas, startDate);
+    status.textContent = 'Calculation complete.';
+  } catch(err){
+    console.error(err);
+    alert('Calculation failed: ' + err.message);
+    status.textContent = '';
+  }
+});
+, ()=> {
   try{
     const person = document.getElementById('personName').value || '—';
     // depth value 1..4 corresponds to levels (Antar only -> up to Prana)
@@ -447,5 +533,6 @@ document.getElementById('autoNak').addEventListener('click', async ()=>{
 </script>
 </body>
 </html>
+
 
 
