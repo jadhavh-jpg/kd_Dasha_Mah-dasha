@@ -1,0 +1,9 @@
+{
+  "name": "kasturi-vimshottari",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "astronomia": "^2.0.0"
+  }
+}
+
